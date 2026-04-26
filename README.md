@@ -153,3 +153,9 @@ accident-guard/
 ## License
 
 MIT License. Free to use, modify, and build.
+
+##Thankyou 
+
+Thank you for exploring the AccidentGuard dashboard. This project was developed with a single goal in mind: to save lives by bridging the critical gap between when a crash occurs and when help arrives. Your interest in NirmalyaLenka/AccidentGuard helps push open-source safety technology forward. Stay safe on the roads!"
+happy jurney
+##   ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
