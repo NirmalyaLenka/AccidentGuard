@@ -1,0 +1,97 @@
+AccidentGuard - Wiring Diagram
+================================
+
+ESP32 DevKit Pinout and Connections
+
+                    +------------------+
+                    |    ESP32 DevKit  |
+                    |                  |
+    3.3V ---------->| 3V3    GND |<----+---- GND (Common ground)
+                    |                  |
+    ADXL345 VCC --->| 3V3              |
+    ADXL345 GND --->| GND              |
+    ADXL345 SDA --->| GPIO21 (SDA)     |
+    ADXL345 SCL --->| GPIO22 (SCL)     |
+                    |                  |
+    GPS VCC ------->| 3V3              |
+    GPS GND ------->| GND              |
+    GPS TX -------->| GPIO16 (RX2)     |
+    GPS RX <--------| GPIO17 (TX2)     |
+                    |                  |
+    BUZZER (+) ---->| GPIO26           |
+    BUZZER (-) ---->| GND              |
+                    |                  |
+    LED (+) ------->| GPIO27 (330 ohm) |
+    LED (-) ------->| GND              |
+                    |                  |
+    TOUCH WIRE ---->| GPIO4  (T0)      |
+                    |                  |
+    USB Power ----->| VIN (5V)         |
+                    +------------------+
+
+
+Component Details
+-----------------
+
+1. ADXL345 Accelerometer (I2C)
+   - VCC  -> 3.3V
+   - GND  -> GND
+   - SDA  -> GPIO21
+   - SCL  -> GPIO22
+   - CS   -> 3.3V (for I2C mode)
+   - SDO  -> GND (I2C address = 0x53)
+
+2. NEO-6M GPS Module
+   - VCC  -> 3.3V
+   - GND  -> GND
+   - TX   -> GPIO16 (ESP32 receives GPS data)
+   - RX   -> GPIO17 (ESP32 can send commands to GPS)
+
+3. Buzzer (Active Buzzer)
+   - Positive (+) -> GPIO26
+   - Negative (-) -> GND
+   - Note: Use a transistor (2N2222 or NPN) if buzzer draws > 40mA
+     Transistor wiring:
+       Base -> 1K resistor -> GPIO26
+       Collector -> Buzzer (+)
+       Emitter -> GND
+       Buzzer other end -> 3.3V or 5V
+
+4. LED Flashlight
+   - LED Anode (+)  -> 330 ohm resistor -> GPIO27
+   - LED Cathode (-) -> GND
+   - For high-power LED: use MOSFET (IRLZ44N)
+     Gate -> 1K resistor -> GPIO27
+     Drain -> LED (-)
+     Source -> GND
+     LED (+) -> 3.3V or 5V
+
+5. Capacitive Touch Button
+   - Connect a wire or metal pad to GPIO4 (T0)
+   - No external resistor needed (ESP32 has built-in touch circuitry)
+   - Use a small metal plate or foil as the touch pad
+
+6. Power Supply
+   - USB cable to phone charger (5V 1A minimum)
+   - Or: 3.7V LiPo battery + TP4056 charger module -> VIN
+   - Battery capacity: 2000mAh gives approximately 8-12 hours
+
+
+Optional: SIM800L GSM Module (for SMS/Call)
+-------------------------------------------
+   - VCC  -> 4.0V (separate power, needs 2A peak)
+   - GND  -> GND (common ground with ESP32)
+   - TX   -> GPIO14
+   - RX   -> GPIO12
+   - Use a 4.0V LiPo or a buck converter set to 4.0V
+   - Do NOT connect SIM800L VCC to ESP32 3.3V or 5V USB directly
+
+
+Enclosure Suggestion
+--------------------
+- Use a small ABS plastic project box (100x60x25mm)
+- Mount ADXL345 flat, aligned with device orientation
+- GPS antenna should face upward or have a clear sky view
+- Touch pad: small bolt or coin soldered to GPIO4 wire, mounted on lid
+- Buzzer and LED holes on front face
+- USB charging port on side

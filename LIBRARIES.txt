@@ -1,0 +1,35 @@
+# AccidentGuard - Required Libraries
+
+Install these libraries in Arduino IDE before compiling.
+Go to: Sketch > Include Library > Manage Libraries
+
+---
+
+1. Adafruit ADXL345
+   - Search: "Adafruit ADXL345"
+   - Install: Adafruit ADXL345 by Adafruit
+
+2. Adafruit Unified Sensor
+   - Search: "Adafruit Unified Sensor"
+   - Install: Adafruit Unified Sensor by Adafruit
+
+3. TinyGPS++
+   - Search: "TinyGPSPlus"
+   - Install: TinyGPSPlus by Mikal Hart
+
+4. ESP32 BLE Arduino
+   - This comes built-in with the ESP32 board package
+   - Make sure you have ESP32 board installed via Board Manager
+   - URL: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+---
+
+Board Settings in Arduino IDE:
+  Board:            ESP32 Dev Module
+  Upload Speed:     115200
+  CPU Frequency:    240MHz
+  Flash Frequency:  80MHz
+  Flash Mode:       QIO
+  Flash Size:       4MB
+  Partition Scheme: Default 4MB with spiffs
+  Port:             (select your COM port)
