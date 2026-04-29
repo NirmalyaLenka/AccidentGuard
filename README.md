@@ -42,7 +42,8 @@ The device broadcasts data over Bluetooth to a nearby phone. The companion app o
 - USB cable and charger, or a LiPo battery
 
 Optional for direct SMS and calling:
-- SIM800L GSM module
+- SIM800L GSM module <img width="354" height="234" alt="image" src="https://github.com/user-attachments/assets/f9cceb3b-d446-41e5-a59e-82d5f2fbe557" />
+
 - SIM card with calling plan
 - Separate 4V power supply for SIM800L
 
