@@ -31,8 +31,10 @@ The device broadcasts data over Bluetooth to a nearby phone. The companion app o
 ## Hardware You Need
 
 - ESP32 DevKit (any 38-pin or 30-pin version)
-- ADXL345 accelerometer module
-- NEO-6M GPS module with antenna
+- ADXL345 accelerometer module<img width="474" height="333" alt="image" src="https://github.com/user-attachments/assets/92eeddfb-caf3-45df-88a5-b2cf9e389232" />
+
+- NEO-6M GPS module with antenna <img width="258" height="258" alt="image" src="https://github.com/user-attachments/assets/1b56d122-a4ec-4002-9f8e-86f4795bf602" />
+
 - Active buzzer (5V, loud)
 - 1 or more bright white LEDs
 - A piece of wire or small metal plate for the touch button
