@@ -165,6 +165,31 @@ happy jurney
 
 ---
 
+## Skills & technologies
+
+`Arduino/C++` · `C/C++` · `HTML/CSS`
+
+
+## Repository structure
+
+Key files and folders (not exhaustive):
+
+- `ADXL345.pdf`
+- `BOM.txt`
+- `LIBRARIES.txt`
+- `README.md`
+- `WIRING.txt`
+- `accident_guard.ino`
+- `config (1).h`
+- `index.html`
+- `sms_caller.h`
+
+
+## How it works
+
+The main firmware sketch is `accident_guard.ino`. Open it in Arduino IDE, verify the board, pin mapping and library requirements, then compile and upload. Test hardware behaviour on the real circuit before relying on it.
+
+
 ## Maintenance & Audit
 
 - **Audit date:** 10 November 2026
