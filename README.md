@@ -124,6 +124,6 @@ The README was checked against the current firmware, wiring notes, BOM, library 
 
 ## Maintenance & audit
 
-- **Audit date:** 11 November 2026
+- **Audit date:** 13 November 2026
 - **Scope:** documentation-only review; firmware, pins, and hardware behavior were not changed.
 - **Verification:** compilation, GPS, BLE client behavior, and emergency signaling remain unverified.
