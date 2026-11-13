@@ -1,199 +1,129 @@
-# AccidentGuard
+# AccidentGuard — ESP32 Impact-Alert Prototype
 
-A small device you wear on your vehicle or body that detects accidents automatically, tracks your location with GPS, and calls for help if you do not respond.
+AccidentGuard is an ESP32 prototype that reads an ADXL345 accelerometer and NEO-6M GPS module, signals a local alert with a buzzer/LED, and sends a JSON status notification to a connected BLE client. It is suitable for experimentation with sensors and state machines, **not as a dependable emergency-response or life-safety device**.
 
-Built using an ESP32, an ADXL345 accelerometer, a NEO-6M GPS module, a buzzer, a flashlight LED, and a touch button. The device talks to your phone over Bluetooth (BLE).
+## What the current firmware actually does
 
----
+- Reads acceleration from the ADXL345 and calculates the magnitude of the acceleration vector.
+- Enters an alert/cancellation countdown when that magnitude exceeds a hard-coded threshold.
+- Pulses the buzzer and LED during the cancellation window; three touch taps can cancel the alert.
+- Reads NMEA data from the GPS module over UART2 and includes coordinates plus a `gps_valid` flag in the status payload.
+- Provides a BLE GATT characteristic that notifies a connected client about once per second.
 
-## What It Does
+### Important behavior gaps
 
-**Accident Detection**
-The device constantly reads the accelerometer. If it detects a sudden jolt or impact above a set threshold (like a vehicle crash), it starts a 60-second countdown. During those 60 seconds, a buzzer beeps and the LED flashes to let you know it triggered.
+- The emergency routine is a placeholder: it prints the GPS position and a message to Serial. The main firmware does **not** send SMS or place phone calls.
+- `sms_caller.h` is not included or invoked by `accident_guard.ino`; its presence does not mean SIM800L support is integrated.
+- The repository does not contain a companion mobile app. `index.html` is a browser demo, not a verified emergency-contact application.
+- `config (1).h` is not included by the sketch. Thresholds and timings are currently hard-coded in `accident_guard.ino`, so editing the header alone has no effect.
+- The code describes a five-tap anti-theft toggle, but the tap counter resets after the third tap before the five-tap check can be reached. Treat the toggle as nonfunctional until the source is corrected and tested.
+- The impact check uses the magnitude of acceleration, including gravity, with a single threshold and no validated crash-classification/filtering logic. False alerts and missed events are possible.
 
-**If You Are Fine**
-Tap the touch button 3 times within 3 seconds. The alert cancels. Everything goes back to normal.
+Do not use this prototype as your only means of requesting help, as a substitute for a certified crash detector, or as an anti-theft security product.
 
-**If You Do Not Respond**
-After 60 seconds with no cancel, the device triggers the emergency mode. The buzzer runs at full power for 1 minute. The LED flashes to help rescuers find you. It sends your GPS location to your emergency contacts via the companion phone app using BLE.
+## Hardware and pinout
 
-**GPS Location**
-The GPS module tracks your current coordinates. When an emergency happens, it sends a Google Maps link to your emergency contacts so they know exactly where you are.
+See [`WIRING.txt`](WIRING.txt), [`BOM.txt`](BOM.txt), and the included [`ADXL345.pdf`](ADXL345.pdf) reference.
 
-**Anti-Theft Mode**
-You can turn on anti-theft mode when your vehicle is parked. If someone moves the vehicle, the buzzer and LED fire immediately. Tap the button 3 times to turn it off. To toggle anti-theft mode, tap 5 times quickly while the device is idle.
+| Device | ESP32 connection | Notes |
+|---|---|---|
+| ADXL345 SDA | GPIO 21 | I²C |
+| ADXL345 SCL | GPIO 22 | I²C |
+| GPS TX | GPIO 16 / UART2 RX | ESP32 receives GPS data |
+| GPS RX | GPIO 17 / UART2 TX | ESP32 sends to GPS |
+| Active buzzer control | GPIO 26 | Use a transistor driver if current exceeds GPIO capability |
+| LED | GPIO 27 | Use the specified current-limiting resistor/driver |
+| Capacitive touch pad | GPIO 4 / T0 | Touch input |
+| Common ground | As required by the wiring diagram | Verify supply and module requirements |
 
-**BLE Transmission**
-The device broadcasts data over Bluetooth to a nearby phone. The companion app on your phone handles the actual SMS and phone calls to emergency contacts. The device sends a JSON payload every second with state, GPS coordinates, and sensor status.
+The main sketch initializes the ADXL345 over I²C and the GPS UART at 9600 baud. GPS location is only marked valid after the library reports a valid fix.
 
----
+### First-run safety checklist
 
-## Hardware You Need
+1. Build the circuit with the buzzer and high-power LED disconnected or current-limited initially.
+2. Verify ADXL345 supply voltage and I²C wiring; confirm the sensor is detected in Serial Monitor.
+3. Place the GPS antenna where it has a clear view of the sky and check that the firmware eventually reports a valid fix. Until then, coordinates are not suitable for dispatch.
+4. Test touch cancellation and local alerts on the bench without relying on the emergency routine to contact anyone.
+5. Keep any battery, charging circuit, and high-current modules within their ratings and protected from shorts.
 
-- ESP32 DevKit (any 38-pin or 30-pin version)
-- ADXL345 accelerometer module<img width="474" height="333" alt="image" src="https://github.com/user-attachments/assets/92eeddfb-caf3-45df-88a5-b2cf9e389232" />
+The optional SIM800L helper notes a dedicated supply near 4 V with up to 2 A peak capability. Do not power a SIM800L from the ESP32 3.3 V pin; any future integration needs a verified supply, UART wiring, network coverage, and real end-to-end tests.
 
-- NEO-6M GPS module with antenna <img width="258" height="258" alt="image" src="https://github.com/user-attachments/assets/1b56d122-a4ec-4002-9f8e-86f4795bf602" />
+## Software prerequisites
 
-- Active buzzer (5V, loud)
-- 1 or more bright white LEDs
-- A piece of wire or small metal plate for the touch button
-- 330 ohm resistor for the LED
-- USB cable and charger, or a LiPo battery
+- Arduino IDE 2.x.
+- **ESP32 by Espressif Systems** board package.
+- Libraries listed in [`LIBRARIES.txt`](LIBRARIES.txt): Adafruit ADXL345, Adafruit Unified Sensor, and TinyGPSPlus. BLE headers are supplied by the selected ESP32 Arduino core.
+- USB data cable and correct serial port.
 
-Optional for direct SMS and calling:
-- SIM800L GSM module <img width="354" height="234" alt="image" src="https://github.com/user-attachments/assets/f9cceb3b-d446-41e5-a59e-82d5f2fbe557" />
+## Build and upload
 
-- SIM card with calling plan
-- Separate 4V power supply for SIM800L
+1. Install the ESP32 board package and the libraries above.
+2. Open the root-level `accident_guard.ino` in Arduino IDE.
+3. Select **ESP32 Dev Module** (or your exact board), choose its serial port, and upload.
+4. Open Serial Monitor at **115200 baud**.
+5. Confirm ADXL345 initialization succeeds before attempting any alert test. If it fails, the sketch remains in an LED-blink loop.
+6. Test local alert/cancel behavior and GPS validity separately. Do not treat a printed emergency message or BLE notification as proof that a call or SMS was sent.
 
-Full parts list with prices is in hardware/BOM.txt.
+No firmware compilation, GPS field test, BLE client integration, or physical alert test was performed during this documentation update.
 
----
+## Configuration
 
-## How to Wire It
+Current operational constants live directly in `accident_guard.ino`:
 
-See hardware/WIRING.txt for the full diagram.
+| Constant | Current value | Purpose |
+|---|---:|---|
+| `ACCIDENT_THRESHOLD` | 2.5 | Acceleration-magnitude threshold in G units after conversion |
+| `ANTITHEFT_THRESHOLD` | 0.8 | Movement threshold in the anti-theft branch |
+| `TOUCH_THRESHOLD` | 40 | Touch reading below which is treated as pressed |
+| `TOUCH_CANCEL_TAPS` | 3 | Tap count used for cancellation |
+| `CANCEL_TAP_WINDOW` | 3000 ms | Tap grouping window |
+| `ALERT_WAIT_TIME` | 60000 ms | Delay before entering emergency state |
 
-Quick summary:
-- ADXL345 goes to I2C pins (GPIO21 = SDA, GPIO22 = SCL)
-- GPS goes to UART2 (GPIO16 = RX, GPIO17 = TX)
-- Buzzer positive wire goes to GPIO26
-- LED goes to GPIO27 through a 330 ohm resistor
-- Touch button wire goes to GPIO4
+The similarly named values in `config (1).h` are not wired into the current sketch. Do not assume changing that header changes runtime behavior.
 
----
+## BLE payload
 
-## How to Upload the Code
+When a BLE client is connected, the firmware sends a notification approximately once per second. The JSON payload contains:
 
-1. Download and install Arduino IDE from arduino.cc
-2. Add ESP32 board support:
-   - Open File > Preferences
-   - Add this URL to "Additional Board Manager URLs":
-     https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-   - Open Tools > Board > Boards Manager, search "ESP32", install it
-3. Install libraries (Sketch > Manage Libraries):
-   - Adafruit ADXL345
-   - Adafruit Unified Sensor
-   - TinyGPSPlus
-4. Open firmware/accident_guard.ino
-5. Select your board: Tools > Board > ESP32 Dev Module
-6. Select your port: Tools > Port
-7. Click Upload
+- `state`: `IDLE`, `ACCIDENT_WAITING`, `EMERGENCY`, or `ANTITHEFT`
+- `lat` and `lng`: last GPS coordinates (may remain zero before a fix)
+- `gps_valid`: whether the GPS library reports a valid location
+- `antitheft`: internal anti-theft mode flag
+- `uptime`: elapsed seconds since boot
 
----
+The data is delivered through a connected GATT characteristic, not through a verified emergency notification service. A compatible client must connect and subscribe to notifications.
 
-## How to Use It
+## Repository map
 
-**Normal operation:**
-Power it on. The LED blinks twice to confirm startup. That is it. The device runs on its own.
-
-**Cancel a false alarm:**
-Tap the touch button 3 times fast (within 3 seconds). The buzzer and LED stop.
-
-**Enable anti-theft (parked mode):**
-Tap the touch button 5 times quickly. The buzzer beeps twice to confirm. Now any movement triggers the alarm. Tap 3 times to cancel.
-
-**Emergency happens automatically:**
-You do not need to do anything. If an impact is detected and you do not cancel it within 60 seconds, the device handles everything.
-
----
-
-## Adjusting Sensitivity
-
-Open firmware/config.h and change these values:
-
-- ACCIDENT_G_THRESHOLD: Higher number means less sensitive (default 2.5G). If it triggers on road bumps, increase to 3.0 or 3.5.
-- EMERGENCY_DELAY_SEC: How many seconds before it calls for help (default 60).
-- TOUCH_SENSITIVITY: Lower number means touch is more sensitive (default 40).
-
----
-
-## BLE Data Format
-
-The device broadcasts JSON every second:
-
-  {"state":"IDLE","lat":23.831457,"lng":91.286778,"gps_valid":true,"antitheft":false,"uptime":120}
-
-State can be: IDLE, ACCIDENT_WAITING, EMERGENCY, ANTITHEFT
-
----
-
-## Demo File
-
-Open demo/index.html in any browser. It simulates the full device behavior so you can see how it works before building the hardware. Click "Simulate Accident" to see the countdown, use the touch pad to cancel, and toggle anti-theft mode.
-
----
-
-## Folder Structure
-
-```
-accident-guard/
-    firmware/
-        accident_guard.ino   (main code to upload to ESP32)
-        config.h             (all settings in one place)
-        sms_caller.h         (optional SIM800L support)
-        LIBRARIES.txt        (what to install in Arduino IDE)
-    hardware/
-        WIRING.txt           (how to connect everything)
-        BOM.txt              (parts list with prices)
-    demo/
-        index.html           (browser demo of the device)
-    README.md                (this file)
-```
-
----
-
-## Limitations
-
-- The device needs a BLE-connected phone app to send SMS and make calls. Without a phone nearby, BLE data is broadcast but not acted on.
-- If you add a SIM800L module, it can call and text directly without a phone. See firmware/sms_caller.h.
-- GPS needs some time outdoors to get a fix (30 seconds to 2 minutes on first use).
-- The ADXL345 must be mounted flat and secure. A loose sensor gives false readings.
-
----
-
-## License
-
-MIT License. Free to use, modify, and build.
- ## Thank you
-
-Thank you for exploring the AccidentGuard dashboard. This project was developed with a single goal in mind: to save lives by bridging the critical gap between when a crash occurs and when help arrives. Your interest in NirmalyaLenka/AccidentGuard helps push open-source safety technology forward. Stay safe on the roads!"
-happy jurney
-## +++++++++++++++++++++++++++++++++++++++++++++++++
-
-
----
-
-## Skills & technologies
-
-`Arduino/C++` · `C/C++` · `HTML/CSS`
-
-
-## Repository structure
-
-Key files and folders (not exhaustive):
-
-- `ADXL345.pdf`
-- `BOM.txt`
-- `LIBRARIES.txt`
-- `README.md`
-- `WIRING.txt`
-- `accident_guard.ino`
-- `config (1).h`
-- `index.html`
-- `sms_caller.h`
-
-
-## How it works
-
-The main firmware sketch is `accident_guard.ino`. Open it in Arduino IDE, verify the board, pin mapping and library requirements, then compile and upload. Test hardware behaviour on the real circuit before relying on it.
-
-
-## Maintenance & Audit
+| Path | Purpose |
+|---|---|
+| `accident_guard.ino` | Main ESP32 firmware |
+| `config (1).h` | Configuration draft; not included by the current sketch |
+| `sms_caller.h` | Optional SIM800L helper; not integrated into main firmware |
+| `LIBRARIES.txt` | Arduino library and board settings |
+| `WIRING.txt` | Hardware connections and power notes |
+| `BOM.txt` | Parts list and approximate cost estimates |
+| `ADXL345.pdf` | Accelerometer reference document |
+| `index.html` | Browser simulation/demo only |
+| `README.md` | Project overview and limitations |
+
+All files currently sit at repository root; the older folder-tree description does not match the checked-in layout.
+
+## Troubleshooting
+
+- **ADXL345 not detected:** verify I²C address, SDA/SCL, power, ground, and module mode pins.
+- **GPS stays invalid:** check UART TX/RX crossover, 9600 baud, antenna placement, and outdoor sky visibility.
+- **Coordinates are zero or stale:** check `gps_valid`; never treat coordinates as current unless a valid fix is reported.
+- **BLE payload is absent:** a client must connect to the `AccidentGuard` GATT service and subscribe to the notify characteristic.
+- **No SMS/call is received:** this is expected with the current main sketch; the emergency function is a Serial placeholder and the SIM800L helper is not integrated.
+- **False accident triggers:** the single acceleration-magnitude threshold is not a validated crash detector. Do not lower/raise it and assume the device is safe without systematic tests.
+
+## Verification and license status
+
+The README was checked against the current firmware, wiring notes, BOM, library list, configuration header, and SIM800L helper. Build/runtime behavior remains unverified. No root-level `LICENSE` file was present in the inspected tree, so the previous MIT claim is not backed by a checked-in license file.
+
+## Maintenance & audit
 
 - **Audit date:** 11 November 2026
-- **Documentation status:** README reviewed and audit record added on this date.
-- **Scope and evidence:** This is a documentation-level maintenance pass. It does not establish that source code compiles, dependencies are current, security has been tested, or hardware/runtime behavior has been verified.
-- **Code and tests:** No new functional code changes or test results are claimed by this README update. Run project-specific build, test, and hardware/runtime checks before relying on the project.
-- **Maintenance baseline:** Documentation status recorded through 11 November 2026; revisit setup instructions, dependencies, known limitations, and tests when the project changes.
+- **Scope:** documentation-only review; firmware, pins, and hardware behavior were not changed.
+- **Verification:** compilation, GPS, BLE client behavior, and emergency signaling remain unverified.
